@@ -9,7 +9,7 @@
 #include <communicationHandler.h>
 
 
-int motorPins[8] = {27, 12, 18, 19, 23, 13, 4, 16};
+int motorPins[8] = {4, 16, 18, 19, 23, 13, 12, 27};
 uint8_t lightSensorPins[8] = {35, 2, 34, 39, 32, 33, 25, 26};
 int distSensorsPins[8][2] = {
         {0,  1},
