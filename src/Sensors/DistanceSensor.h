@@ -4,11 +4,9 @@
 
 class DistanceSensor {
   public:
-    DistanceSensor(uint8_t mcp23071Addr, uint8_t echoPin, uint8_t trigPin);
+    DistanceSensor(uint8_t pingPin);
 
-    uint8_t readDistance();
+    uint8_t readDistance() const;
   private:
-    uint8_t echoPin;
-    uint8_t trigPin;
-    MCP23017 expaderHandle;
+    uint8_t pingPin;
 };
