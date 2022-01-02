@@ -1,7 +1,3 @@
-//
-// Created by martinrobomaze on 10. 11. 2021.
-//
-
 #ifndef FIREFIGHTERSENSORINTERFACE_MCP23017_H
 #define FIREFIGHTERSENSORINTERFACE_MCP23017_H
 

@@ -11,16 +11,7 @@
 
 int motorPins[8] = {4, 16, 18, 19, 23, 13, 12, 27};
 uint8_t lightSensorPins[8] = {35, 2, 34, 39, 32, 33, 25, 26};
-int distSensorsPins[8][2] = {
-        {0,  1},
-        {2,  3},
-        {4,  5},
-        {6,  7},
-        {8,  9},
-        {10, 11},
-        {12, 13},
-        {14, 15}
-};
+int distSensorsPins[5] = {15, 2, 14, 17, 5};
 
 int motorChannels[4][2] = {
         {0, 1},
@@ -45,8 +36,6 @@ double encoderValues[4];
 CommunicationHandler commHandler;
 
 void handleDataMessage(String *encodedMessage) {
-    uint16_t sensorValues[8];
-
     String lightSensorsData = "";
     String distanceSensorsData = "";
     String IMUSensorData = "";
@@ -59,11 +48,12 @@ void handleDataMessage(String *encodedMessage) {
             encodersData += String(encoders[i].getRotations());
         }
 
-//        distanceSensorsData += String(distanceSensors[i].readDistance()) + ",";
-        distanceSensorsData += "0,";
+        if (i < 5) {
+            distanceSensorsData += String(distanceSensors[i].readDistance()) + ",";
+        }
     }
 
-//    IMUSensorData = String(mpu->getYawAngle());
+//    IMUSensorData = String(mpu ->getYawAngle());
     IMUSensorData = "0";
 
     lightSensorsData = lightSensorsData.substring(0, lightSensorsData.lastIndexOf(','));
@@ -183,15 +173,12 @@ void setup() {
         LightSensor(lightSensorPins[7])
     };
 
-    distanceSensors = new DistanceSensor[8]{
-            DistanceSensor(0x20, distSensorsPins[0][0], distSensorsPins[0][1]),
-            DistanceSensor(0x20, distSensorsPins[1][0], distSensorsPins[1][1]),
-            DistanceSensor(0x20, distSensorsPins[2][0], distSensorsPins[2][1]),
-            DistanceSensor(0x20, distSensorsPins[3][0], distSensorsPins[3][1]),
-            DistanceSensor(0x20, distSensorsPins[4][0], distSensorsPins[4][1]),
-            DistanceSensor(0x20, distSensorsPins[5][0], distSensorsPins[5][1]),
-            DistanceSensor(0x20, distSensorsPins[6][0], distSensorsPins[6][1]),
-            DistanceSensor(0x20, distSensorsPins[7][0], distSensorsPins[7][1])
+    distanceSensors = new DistanceSensor[5]{
+        DistanceSensor(distSensorsPins[0]),
+        DistanceSensor(distSensorsPins[1]),
+        DistanceSensor(distSensorsPins[2]),
+        DistanceSensor(distSensorsPins[3]),
+        DistanceSensor(distSensorsPins[4]),
     };
 
     encoders = new Encoder[4]{
