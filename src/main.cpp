@@ -35,6 +35,9 @@ double encoderValues[4];
 // Creates communicationHandler class instance.
 CommunicationHandler commHandler;
 
+SemaphoreHandle_t distSensorsMutex = nullptr;
+uint8_t distSensorsValues[5];
+
 void handleDataMessage(String *encodedMessage) {
     String lightSensorsData = "";
     String distanceSensorsData = "";
@@ -49,7 +52,10 @@ void handleDataMessage(String *encodedMessage) {
         }
 
         if (i < 5) {
-            distanceSensorsData += String(distanceSensors[i].readDistance()) + ",";
+            if (xSemaphoreTake(distSensorsMutex, (TickType_t) 10) == pdTRUE) {
+                distanceSensorsData += String(distSensorsValues[i]) + ",";
+                xSemaphoreGive(distSensorsMutex);
+            }
         }
     }
 
@@ -127,6 +133,7 @@ void handleEncodersMessage(const String& data, const String& message, String *en
 }
 
 TaskHandle_t readIMUSensor;
+TaskHandle_t readDistSensorsTask;
 
 [[noreturn]] void readMPU(void *params) {
     (void)params;
@@ -146,6 +153,25 @@ TaskHandle_t readIMUSensor;
         }
         resetEncoders = false;
         vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+}
+
+[[noreturn]] void readDistSensors(void *params) {
+    (void)params;
+
+    for (;;) {
+        for (int i = 0; i < 5; i++) {
+            uint8_t sensorValue = distanceSensors[i].readDistance();
+
+            if (xSemaphoreTake(distSensorsMutex, (TickType_t) 10) == pdTRUE) {
+                distSensorsValues[i] = sensorValue;
+
+                xSemaphoreGive(distSensorsMutex);
+            }
+            vTaskDelay(5 / portTICK_PERIOD_MS);
+        }
+
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 }
 
@@ -216,7 +242,16 @@ void setup() {
 //            &readIMUSensor,
 //            0);
 
-    Serial.println(xPortGetCoreID());
+    distSensorsMutex = xSemaphoreCreateMutex();
+    xTaskCreatePinnedToCore(
+        readDistSensors,
+        "Distance sensors reading task",
+        100000,
+        nullptr,
+        0,
+        &readDistSensorsTask,
+        0
+    );
 }
 
 // Loop function.
