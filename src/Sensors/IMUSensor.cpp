@@ -85,13 +85,13 @@ void IMUSensor::readIMU() {
 }
 
 float IMUSensor::getYawAngle() {
-    return (float)(ypr[0] * 180 / PI);
+    return (float) (ypr[0] * 180 / PI);
 }
 
 float IMUSensor::getPitchAngle() {
-    return (float)(ypr[1] * 180 / PI);
+    return (float) (ypr[1] * 180 / PI);
 }
 
 float IMUSensor::getRollAngle() {
-    return (float)(ypr[2] * 180 / PI);
+    return (float) (ypr[2] * 180 / PI);
 }

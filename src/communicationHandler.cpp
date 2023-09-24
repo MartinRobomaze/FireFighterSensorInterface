@@ -1,195 +1,145 @@
 #include "communicationHandler.h"
 
 
-bool CommunicationHandler::decode(String message, int *messageType, String *data) {
-    char messageCharArr[message.length()];
-
-    // Creates char array from the message.
-    message.toCharArray(messageCharArr, message.length());
-
-    int i = 0;
-
-    // If the start character is present.
-    if (messageCharArr[i] == CommunicationHandler::messageStart) {
-        i++;
-
-        // If the message type is light sensor.
-        if (messageCharArr[i] == CommunicationHandler::lightSensor) {
-            i++;
-            *data = CommunicationHandler::getDataFromMessage(message);
-            *messageType = TYPE_LIGHT_SENSOR;
-        }
-
-            // If the message type is distance sensor.
-        else if (messageCharArr[i] == CommunicationHandler::distanceSensor) {
-            i++;
-            *data = CommunicationHandler::getDataFromMessage(message);
-            *messageType = TYPE_DISTANCE_SENSOR;
-        }
-
-            // If the message type is IMU sensor.
-        else if (messageCharArr[i] == CommunicationHandler::imuSensor) {
-            i++;
-            *data = CommunicationHandler::getDataFromMessage(message);
-            *messageType = TYPE_IMU;
-        }
-
-            // If the message type is motor.
-        else if (messageCharArr[i] == CommunicationHandler::motor) {
-            i++;
-            *data = CommunicationHandler::getDataFromMessage(message);
-            *messageType = TYPE_MOTOR;
-        }
-
-        else if (messageCharArr[i] == CommunicationHandler::echo) {
-            *data = CommunicationHandler::getDataFromMessage(message);
-            *messageType = TYPE_ECHO;
-        }
-
-        else if (messageCharArr[i] == CommunicationHandler::lightSensorsCalibration) {
-            *data = CommunicationHandler::getDataFromMessage(message);
-            *messageType = TYPE_LIGHT_SENSORS_CALIBRATION;
-        }
-
-        else if (messageCharArr[i] == CommunicationHandler::data) {
-            *data = CommunicationHandler::getDataFromMessage(message);
-            *messageType = TYPE_DATA;
-        }
-
-        else if (messageCharArr[i] == CommunicationHandler::motorsBrake) {
-            *data = CommunicationHandler::getDataFromMessage(message);
-            *messageType = TYPE_MOTORS_BRAKE;
-        }
-
-        else if (messageCharArr[i] == CommunicationHandler::encoder) {
-            *data = CommunicationHandler::getDataFromMessage(message);
-            *messageType = TYPE_ENCODER;
-        }
-
-            // Invalid message.
-        else {
-            return false;
-        }
-    }
-
-        // Invalid message.
-    else {
-        return false;
-    }
-
-    // Valid message.
-    return true;
-}
-
-String CommunicationHandler::encode(int messageType, String data) {
-    String message = "";
-
-    // Add tart character to the encoded message.
-    message += CommunicationHandler::messageStart;
-
-    // If the message type is light sensor.
-    if (messageType == TYPE_LIGHT_SENSOR) {
-        message += CommunicationHandler::lightSensor;
-    }
-
-        // If the message type is distance sensor.
-    else if (messageType == TYPE_DISTANCE_SENSOR) {
-        message += CommunicationHandler::distanceSensor;
-    }
-
-        // If the message type is IMU sensor.
-    else if (messageType == TYPE_IMU) {
-        message += CommunicationHandler::imuSensor;
-    }
-
-        // If the message type is motor.
-    else if (messageType == TYPE_MOTOR) {
-        message += CommunicationHandler::motor;
-    }
-
-    else if (messageType == TYPE_ECHO) {
-        message += CommunicationHandler::echo;
-    }
-
-    else if (messageType == TYPE_LIGHT_SENSORS_CALIBRATION) {
-        message += CommunicationHandler::lightSensorsCalibration;
-    }
-
-    else if (messageType == TYPE_MOTORS_BRAKE) {
-        message += CommunicationHandler::motorsBrake;
-    }
-
-    else if (messageType == TYPE_MOTORS_BRAKE) {
-        message += CommunicationHandler::motorsBrake;
-    }
-
-    else if (messageType == TYPE_ENCODER) {
-        message += CommunicationHandler::encoder;
-    }
-
-        // Invalid message type.
-    else {
-        return "";
-    }
-
-    // Add data start character to message.
-    message += CommunicationHandler::dataStart;
-    // Add data to message.
-    message += data;
-
-    // Add data and message end to message.
-    message += CommunicationHandler::dataEnd;
-    message += CommunicationHandler::messageEnd;
-
-    // Return encoded message.
-    return message;
-}
-
-String CommunicationHandler::readMessage() {
-    String message = "";
+MessageType CommunicationHandler::readMessage(char *data) {
     // If message is valid.
-    if (Serial.read() == CommunicationHandler::messageStart) {
-        message += CommunicationHandler::messageStart;
+    if (Serial.read() == MESSAGE_START) {
+        char messageTypeChr = Serial.read();
+
+        MessageType messageType;
+
+        int bytesToRead = 0;
+
+        switch (messageTypeChr) {
+            case MESSAGE_TYPE_SENSORS:
+                messageType = SensorsType;
+                bytesToRead = 0;
+                break;
+            case MESSAGE_TYPE_ENCODERS:
+                messageType = EncodersType;
+                bytesToRead = 0;
+                break;
+            case MESSAGE_TYPE_MOTORS:
+                messageType = MotorsType;
+                bytesToRead = 8;
+                break;
+            case MESSAGE_TYPE_BRAKE_MOTORS:
+                messageType = MotorsBrakeType;
+                bytesToRead = 0;
+                break;
+            default:
+                return Error;
+                break;
+        }
 
         char reading = 'x';
 
-        // While data are available and the message didn't end.
-        while (Serial.available() && reading != CommunicationHandler::messageEnd) {
-            reading = Serial.read();
+        if (bytesToRead != 0) {
+            char buffer[bytesToRead];
 
-            message += reading;
+            Serial.read(buffer, bytesToRead);
         }
 
+        // Read message end.
+        Serial.read();
 
-        // Return the message.
-        return message;
+        return messageType;
     }
 
     // Invalid message.
-    return "";
+    return Error;
 }
 
-String CommunicationHandler::getDataFromMessage(String message) {
-    char messageCharArr[message.length()];
+// Motors data:
+// 2 bytes for motor speed (int16_t)
+// 4 speeds are sent
+MotorsData CommunicationHandler::decodeMotorsMessage(const char *data) {
+    MotorsData motorsData{};
 
-    // Convert the message to char array.
-    message.toCharArray(messageCharArr, message.length());
+    for (int i = 0; i < 8; i += 2) {
+        int16_t speed = ((int16_t)data[i] << 8) | (int16_t) data[i + 1];
+        motorsData.motorsSpeeds[(int) (i / 2)] = speed;
+    }
+
+    return motorsData;
+}
+
+// Sensors data:
+// 1 byte for light sensor (uint8_t) (8 sensors)
+// 2 bytes for distance sensors (uint16_t) (8 sensors)
+// 4 bytes for IMU (int32_t)
+EncodedMessage CommunicationHandler::encodeSensorsMessage(SensorsData data) {
+    // 2 bytes - message start and message type
+    // 8 bytes - light sensors data
+    // 16 bytes distace sensors data
+    // 4 bytes - imu data
+    // 1 byte - message end
+    EncodedMessage encodedMessage{};
+    encodedMessage.messageLength = 2 + 8 + 16 + 4 + 1;
+    encodedMessage.message = new char[encodedMessage.messageLength];
 
     int i = 0;
 
-    // While the data section isn't found
-    while (messageCharArr[i] != '{') {
-        i++;
-    }
+    encodedMessage.message[i] = MESSAGE_START;
     i++;
-    String data = "";
+    encodedMessage.message[i] = MESSAGE_TYPE_SENSORS;
+    i++;
 
-    // While the end of data isn't reached.
-    while (messageCharArr[i] != '}') {
-        data += messageCharArr[i];
+    for (uint8_t lightSensorValue: data.lightSensorsData) {
+        encodedMessage.message[i] = (char)lightSensorValue;
         i++;
     }
 
-    // Return data.
-    return data;
+    for (uint16_t distanceSensorValue: data.distanceSensorsData) {
+        encodedMessage.message[i] = (distanceSensorValue >> 8) & 0xFF;
+        i++;
+        encodedMessage.message[i] = distanceSensorValue & 0xFF;
+        i++;
+    }
+
+    encodedMessage.message[i] = (data.IMUData >> 24) & 0xFF;
+    i++;
+    encodedMessage.message[i] = (data.IMUData >> 16) & 0xFF;
+    i++;
+    encodedMessage.message[i] = (data.IMUData >> 8) & 0xFF;
+    i++;
+    encodedMessage.message[i] = (data.IMUData >> 0) & 0xFF;
+    i++;
+
+    encodedMessage.message[i] = MESSAGE_END;
+
+    return encodedMessage;
+}
+
+// Encoders data:
+// 4 bytes for encoders (int32_t) (4 encoders)
+EncodedMessage CommunicationHandler::encodeEncodersMessage(EncodersData data) {
+    // 2 bytes - message start and message type
+    // 16 bytes - encoders data
+    // 1 byte - message end
+    EncodedMessage message{};
+    message.messageLength = 2 + 16 + 1;
+    message.message = new char[message.messageLength];
+
+    int i = 0;
+
+    message.message[i] = MESSAGE_START;
+    i++;
+    message.message[i] = MESSAGE_TYPE_SENSORS;
+    i++;
+
+    for (int32_t encoderValue: data.encodersValues) {
+        message.message[i] = (encoderValue >> 24) & 0xFF;
+        i++;
+        message.message[i] = (encoderValue >> 16) & 0xFF;
+        i++;
+        message.message[i] = (encoderValue >> 8) & 0xFF;
+        i++;
+        message.message[i] = (encoderValue >> 0) & 0xFF;
+        i++;
+    }
+
+    message.message[i] = MESSAGE_END;
+
+    return message;
 }

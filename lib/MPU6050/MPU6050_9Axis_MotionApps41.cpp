@@ -425,7 +425,7 @@ uint8_t MPU6050_9Axis_MotionApps41::dmpInitialize() {
     DEBUG_PRINT(MPU6050_DMP_CODE_SIZE);
     DEBUG_PRINTLN(F(" bytes)"));
     if (writeProgMemoryBlock(dmpMemory, MPU6050_DMP_CODE_SIZE)) {
-        DEBUG_PRINTLN(F("Success! DMP code written and verified."));
+        DEBUG_PRINTLN(F("NoError! DMP code written and verified."));
 
         DEBUG_PRINTLN(F("Configuring DMP and related settings..."));
 
@@ -434,7 +434,7 @@ uint8_t MPU6050_9Axis_MotionApps41::dmpInitialize() {
         DEBUG_PRINT(MPU6050_DMP_CONFIG_SIZE);
         DEBUG_PRINTLN(F(" bytes in config def)"));
         if (writeProgDMPConfigurationSet(dmpConfig, MPU6050_DMP_CONFIG_SIZE)) {
-            DEBUG_PRINTLN(F("Success! DMP configuration written and verified."));
+            DEBUG_PRINTLN(F("NoError! DMP configuration written and verified."));
 
             DEBUG_PRINTLN(F("Setting DMP and FIFO_OFLOW interrupts enabled..."));
             setIntEnabled(1<<MPU6050_INTERRUPT_FIFO_OFLOW_BIT|1<<MPU6050_INTERRUPT_DMP_INT_BIT);

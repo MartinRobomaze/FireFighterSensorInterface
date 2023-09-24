@@ -331,7 +331,7 @@ uint8_t MPU6050_6Axis_MotionApps20::dmpInitialize() {
 	DEBUG_PRINT(MPU6050_DMP_CODE_SIZE);
 	DEBUG_PRINTLN(F(" bytes)"));
 	if (!writeProgMemoryBlock(dmpMemory, MPU6050_DMP_CODE_SIZE)) return 1; // Failed
-	DEBUG_PRINTLN(F("Success! DMP code written and verified."));
+	DEBUG_PRINTLN(F("NoError! DMP code written and verified."));
 
 	// Set the FIFO Rate Divisor int the DMP Firmware Memory
 	unsigned char dmpUpdate[] = {0x00, MPU6050_DMP_FIFO_RATE_DIVISOR};

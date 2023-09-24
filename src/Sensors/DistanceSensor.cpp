@@ -1,23 +1,22 @@
 #include "DistanceSensor.h"
 
-DistanceSensor::DistanceSensor(uint8_t pingPin) {
-    DistanceSensor::pingPin = pingPin;
+DistanceSensor::DistanceSensor(uint8_t address, int measurementPeriod) {
+    DistanceSensor::i2cAddress = address;
+    DistanceSensor::measurementPeriod = measurementPeriod;
 }
 
-uint8_t DistanceSensor::readDistance() const {
-    pinMode(DistanceSensor::pingPin, OUTPUT);
+DistanceSensorError DistanceSensor::begin() {
+    if (!DistanceSensor::sensor.begin(DistanceSensor::i2cAddress)) {
+        return AddrSetError;
+    }
 
-    digitalWrite(DistanceSensor::pingPin, LOW);
-    delayMicroseconds(2);
+    if (!DistanceSensor::sensor.startRangeContinuous(DistanceSensor::measurementPeriod)) {
+        return MeasurementSetError;
+    }
 
-    digitalWrite(DistanceSensor::pingPin, HIGH);
-    delayMicroseconds(10);
+    return NoError;
+}
 
-    digitalWrite(DistanceSensor::pingPin, LOW);
-
-    pinMode(DistanceSensor::pingPin, INPUT);
-
-    u_long duration = pulseIn(DistanceSensor::pingPin, HIGH);
-
-    return (uint8_t)((double)(duration) / 29 / 2);
+uint16_t DistanceSensor::readDistance() {
+    return DistanceSensor::sensor.readRange();
 }

@@ -1,25 +1,31 @@
 #include "Motor.h"
 
 
-Motor::Motor(int *ledcChannels) {
-  Motor::ledcChannels = ledcChannels;
+Motor::Motor(MotorPins &pins) {
+  ledcSetup(pins.channel1, 1000, 8);
+  ledcAttachPin(pins.pin1, pins.channel1);
+  ledcSetup(pins.channel2, 1000, 8);
+  ledcAttachPin(pins.pin2, pins.channel2);
+
+  Motor::pins = pins;
 }
 
-void Motor::motorWrite(char direction, int speed) {
-  // Turn motor forward.
-  if (direction == 'F') {
-    ledcWrite(Motor::ledcChannels[0], speed);
-    ledcWrite(Motor::ledcChannels[1], 0);
-  }
+void Motor::motorWrite(int speed) {
+  Serial.print(Motor::pins.channel1);
+  Serial.print(" ");
+  Serial.println(Motor::pins.channel2);
 
-  // Turn motor backward.
-  else if (direction == 'B') {
-    ledcWrite(Motor::ledcChannels[0], 0);
-    ledcWrite(Motor::ledcChannels[1], speed);
+  // Turn motor forward.
+  if (speed > 0) {
+    ledcWrite(Motor::pins.channel1, speed);
+    ledcWrite(Motor::pins.channel2, 0);
+  } else {
+    ledcWrite(Motor::pins.channel1, 0);
+    ledcWrite(Motor::pins.channel2, abs(speed));
   }
 }
 
 void Motor::brake() {
-  ledcWrite(Motor::ledcChannels[0], 255);
-  ledcWrite(Motor::ledcChannels[1], 255);
+  ledcWrite(Motor::pins.channel1, 255);
+  ledcWrite(Motor::pins.channel2, 255);
 }

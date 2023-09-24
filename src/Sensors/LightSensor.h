@@ -1,26 +1,32 @@
-/**
- * Low level analog light sensor reader. By default it uses 12 bit resolution, it can be changed. 
- * 
- * Input: Pin of the light sensor to be read.
- * Output: The sensor's reading.
- * 
- * Creator: Martinlinux
- * Version: 1.0
- */
+#ifndef FIREFIGHTERSENSORINTERFACE_LIGHTSENSOR_H
+#define FIREFIGHTERSENSORINTERFACE_LIGHTSENSOR_H
 
 #include <Arduino.h>
+#include <Wire.h>
 
+#define ADS7830ADDR 0x48
+#define CONVERSION_DELAY_US 10 // Delay between requesting and receiving ADS7830 reading
 
 class LightSensor {
-  public:
-    ///<summary> Low level analog light sensor reader.
-    ///<param name="lightSensorPin"> Pin of the light sensor.
-    ///<param name="resolution"> Optional, the resolution of reading, by default it's 12 bit.
-    LightSensor(int lightSensorPin, int resolution = 12);
+public:
+    /**
+     * @brief Low level analog light sensor reader.
+     * @param lightSensorChan Light sensor channel.
+     */
+    explicit LightSensor(int lightSensorChan);
 
-    ///<summary> Reads analog value of the sensor.
+    /**
+     * @brief Reads the value of the light sensor.
+     * @return Sensor value.
+     */
     int read();
-  private:
-    int lightSensorPin;
-    int resolution;
+
+private:
+    int lightSensorChan;
+
+    // https://www.ti.com/lit/ds/symlink/ads7830.pdf?ts=1695499691046&ref_url=https%253A%252F%252Fwww.google.com%252F
+    // Table no. 2
+    const int chanToADS7830Chan[8] = {0, 2, 4, 6, 1, 3, 5, 7};
 };
+
+#endif

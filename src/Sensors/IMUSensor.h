@@ -1,18 +1,28 @@
+#ifndef FIREFIGHTERSENSORINTERFACE_IMUSENSOR_H
+#define FIREFIGHTERSENSORINTERFACE_IMUSENSOR_H
+
 #include <Arduino.h>
 #include "MPU6050_6Axis_MotionApps20.h"
 
 
 class IMUSensor {
-  public:
+public:
     explicit IMUSensor(int interruptPin);
+
     void readIMU();
+
     float getYawAngle();
+
     float getPitchAngle();
+
     float getRollAngle();
+
     bool init();
+
     bool initDMP(short XGyroOffset, short YGyroOffset, short ZGyroOffset,
                  short XAccelOffset, short YAccelOffset, short ZAccelOffset);
-  private:
+
+private:
     // [w, x, y, z] quaternion container.
     Quaternion q;
     // [x, y, z] gravity vector.
@@ -32,3 +42,5 @@ class IMUSensor {
     // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector.
     float ypr[3] = {0.0, 0.0, 0.0};
 };
+
+#endif
