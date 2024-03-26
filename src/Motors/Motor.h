@@ -14,7 +14,7 @@ class Motor {
   public:
 
     // @brief Sets up motor 
-    Motor(MotorPins &pins);
+    Motor(MotorPins pins);
 
     /// <summary> Turns motor to a given direction, at a given speed.
     /// <param name="direction"> Direction for the motor to be turned.

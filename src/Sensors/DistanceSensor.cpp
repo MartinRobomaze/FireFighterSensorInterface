@@ -10,7 +10,7 @@ DistanceSensorError DistanceSensor::begin() {
         return AddrSetError;
     }
 
-    if (!DistanceSensor::sensor.startRangeContinuous(DistanceSensor::measurementPeriod)) {
+    if (!DistanceSensor::sensor.startRangeContinuous()) {
         return MeasurementSetError;
     }
 
@@ -18,5 +18,5 @@ DistanceSensorError DistanceSensor::begin() {
 }
 
 uint16_t DistanceSensor::readDistance() {
-    return DistanceSensor::sensor.readRange();
+    return DistanceSensor::sensor.readRangeResult();
 }

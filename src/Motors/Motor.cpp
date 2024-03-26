@@ -1,7 +1,7 @@
 #include "Motor.h"
 
 
-Motor::Motor(MotorPins &pins) {
+Motor::Motor(MotorPins pins) {
   ledcSetup(pins.channel1, 1000, 8);
   ledcAttachPin(pins.pin1, pins.channel1);
   ledcSetup(pins.channel2, 1000, 8);
@@ -11,10 +11,6 @@ Motor::Motor(MotorPins &pins) {
 }
 
 void Motor::motorWrite(int speed) {
-  Serial.print(Motor::pins.channel1);
-  Serial.print(" ");
-  Serial.println(Motor::pins.channel2);
-
   // Turn motor forward.
   if (speed > 0) {
     ledcWrite(Motor::pins.channel1, speed);

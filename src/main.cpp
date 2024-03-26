@@ -5,14 +5,14 @@
 #include "Sensors/LightSensor.h"
 #include "Sensors/Encoder.h"
 #include "communicationHandler.h"
-#include "Sensors/IMUSensor.h"
 
 #define DIST_SENSORS_BASE_ADDRESS 0x30
-#define DIST_SENSORS_MEAS_PERIOD 10
+#define DIST_SENSORS_MEAS_PERIOD 2
 
 const int enablePin = 32;
 
 const uint8_t distSensorsSHTPins[8] = {33, 25, 26, 27, 16, 17, 18, 19};
+const uint8_t lightSensorsChans[8] = {0, 2, 4, 6, 1, 5, 5, 7};
 
 MotorPins motorPins[4] = {
         {5, 4, 0, 1},
@@ -31,14 +31,11 @@ Encoder *encoders[4];
 
 //IMUSensor *mpu;
 
-// Creates communicationHandler class instance.
-CommunicationHandler commHandler;
-
 EncodedMessage handleDataMessage() {
     SensorsData data{};
     for (int i = 0; i < 8; i++) {
-         data.lightSensorsData[i] = (uint8_t)(lineSensors[i]->read());
-         data.distanceSensorsData[i] = (uint16_t)(distanceSensors[i]->readDistance());
+        data.lightSensorsData[i] = (uint8_t)(lineSensors[i]->read());
+        data.distanceSensorsData[i] = (uint16_t)(distanceSensors[i]->readDistance());
     }
 
     data.IMUData = -2;
@@ -49,7 +46,6 @@ EncodedMessage handleMotorsMessage(char *data) {
     MotorsData motorsData = CommunicationHandler::decodeMotorsMessage(data);
 
     for (int i = 0; i < 4; i++) {
-
         motors[i]->motorWrite(motorsData.motorsSpeeds[i]);
     }
 
@@ -79,26 +75,26 @@ EncodedMessage handleMotorsBrakeMessage() {
     return message;
 }
 
-EncodedMessage handleEncodersMessage(const String& data) {
-    if (data == "R") {
-        resetEncoders = true;
-
-        EncodedMessage message{};
-        message.messageLength = 3;
-        message.message = new char[message.messageLength];
-        message.message[0] = MESSAGE_START;
-        message.message[1] = MESSAGE_TYPE_ENCODERS;
-        message.message[2] = MESSAGE_END;
-
-        return message;
-    }
-
+EncodedMessage handleEncodersMessage() {
     EncodersData encodersData{};
     for (int i = 0; i < 4; i++) {
         encodersData.encodersValues[i] = (int32_t)(encoders[i]->getDegrees());
     }
 
     return CommunicationHandler::encodeEncodersMessage(encodersData);
+}
+
+EncodedMessage handleEncodersResetMessage() {
+    resetEncoders = true;
+
+    EncodedMessage message{};
+    message.messageLength = 3;
+    message.message = new char[message.messageLength];
+    message.message[0] = MESSAGE_START;
+    message.message[1] = MESSAGE_TYPE_ENCODERS_RESET;
+    message.message[2] = MESSAGE_END;
+
+    return message;
 }
 
 // Setup function.
@@ -115,7 +111,7 @@ void setup() {
     }
 
     for (int i = 0; i < 8; i++) {
-        lineSensors[i] = new LightSensor(i);
+        lineSensors[i] = new LightSensor(lightSensorsChans[i]);
     }
 
     for (int i = 0; i < 4; i++) {
@@ -140,23 +136,23 @@ void setup() {
         digitalWrite(distSensorSHTPin, LOW);
     }
 
-    for (int i = 0; i < 8; i++) {
-        digitalWrite(distSensorsSHTPins[i], HIGH);
-        distanceSensors[i] = new DistanceSensor(DIST_SENSORS_BASE_ADDRESS+i, DIST_SENSORS_MEAS_PERIOD);
-        DistanceSensorError err = distanceSensors[i]->begin();
-        if (err != NoError) {
-            if (err == AddrSetError) {
-                Serial.print("Error setting i2c address for sensor ");
-                Serial.println(i);
-            } else if (err == MeasurementSetError) {
-                Serial.print("Error setting continuous measurement for sensor ");
-                Serial.println(i);
-            } else {
-                Serial.print("Unknown error, sensor ");
-                Serial.println(i);
-            }
-        }
-    }
+   for (int i = 0; i < 8; i++) {
+       digitalWrite(distSensorsSHTPins[i], HIGH);
+       distanceSensors[i] = new DistanceSensor(DIST_SENSORS_BASE_ADDRESS+i, DIST_SENSORS_MEAS_PERIOD);
+       DistanceSensorError err = distanceSensors[i]->begin();
+       if (err != NoError) {
+           if (err == AddrSetError) {
+               Serial.print("Error setting i2c address for sensor ");
+               Serial.println(i);
+           } else if (err == MeasurementSetError) {
+               Serial.print("Error setting continuous measurement for sensor ");
+               Serial.println(i);
+           } else {
+               Serial.print("Unknown error, sensor ");
+               Serial.println(i);
+           }
+       }
+   }
 
 //    mpu = new IMUSensor(imuInterruptPin);
 //
@@ -180,21 +176,23 @@ void setup() {
 void loop() {
     if (Serial.available()) {
         // Read the request.
-        char *message = nullptr;
-        MessageType type = commHandler.readMessage(message);
+        DecodedMessage message = CommunicationHandler::readMessage();
 
-        if (type != Error) {
+        if (message.type != Error) {
             EncodedMessage respEncoded{};
 
-            switch (type) {
+            switch (message.type) {
             case SensorsType:
                 respEncoded = handleDataMessage();
                 break;
             case EncodersType:
-                respEncoded = handleEncodersMessage(message);
+                respEncoded = handleEncodersMessage();
+                break;
+            case EncodersResetType:
+                respEncoded = handleEncodersResetMessage();
                 break;
             case MotorsType:
-                respEncoded = handleMotorsMessage(message);
+                respEncoded = handleMotorsMessage(message.data);
                 break;
             case MotorsBrakeType:
                 respEncoded = handleMotorsBrakeMessage();
@@ -205,6 +203,10 @@ void loop() {
 
             Serial.write(respEncoded.message, respEncoded.messageLength);
             Serial.print("\n");
+
+            // Free up memory, because we don't want to create a humongous mess.
+            delete message.data;
+            delete respEncoded.message;
         }
     }
 }
